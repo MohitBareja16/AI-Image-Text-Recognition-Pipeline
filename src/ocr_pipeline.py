@@ -1,7 +1,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # ocr_pipeline.py — Path 1: Tesseract OCR Logic
 # Implements ARCHITECTURE.md §4 ocr_pipeline contract + ALGORITHM_SPEC.md §2
-# Uses pytesseract.image_to_data() (NOT image_to_string()) per FR-OCR-01.
+# Uses pytesseract.image_to_data() exclusively per FR-OCR-01.
 # ─────────────────────────────────────────────────────────────────────────────
 
 from __future__ import annotations
@@ -176,8 +176,12 @@ def _filter_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     """
     # Step 1: Remove layout-level rows (conf=-1 means block/para/line, not word)
     df = df[df["conf"] != -1].copy()
+    
+    if df.empty:
+        return df
 
     # Step 2: Remove rows where text is empty or whitespace-only
+    df["text"] = df["text"].astype(str)
     df = df[df["text"].str.strip() != ""].copy()
 
     # Step 3: Remove degenerate boxes (width=0 or height=0)
